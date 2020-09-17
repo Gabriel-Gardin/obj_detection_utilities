@@ -1,23 +1,9 @@
 import numpy as np
 import os
-import six.moves.urllib as urllib
-import tarfile
 import tensorflow as tf
 import sys, getopt, glob
-
-import zipfile
-
-from collections import defaultdict
-from io import StringIO
 from PIL import Image
-
-
-from object_detection.utils import ops as utils_ops
-
 from object_detection.utils import label_map_util
-
-from object_detection.utils import visualization_utils as vis_util
-
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -26,10 +12,11 @@ import matplotlib.pyplot as plt
 MINIMAL_CONFIDENCE = 0.5
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = "mymodels/ssd_models/SSD_Mobilenetv1_FPN/frozen_inference_graph.pb"
+PATH_TO_CKPT = "../../mymodels/ssd_models/SSD_Mobilenetv1_FPN/frozen_inference_graph.pb"
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = "mymodels/ssd_models/SSD_Mobilenetv1_FPN/label_map.pbtxt"
+PATH_TO_LABELS = "../../mymodels/ssd_models/SSD_Mobilenetv1_FPN/label_map.pbtxt"
+
 
 TEST_IMAGE_PATHS = ["all_dataset_final/2367.jpg"]
 
@@ -107,15 +94,6 @@ def run_inference_test(path_imgs):
     """
     image_data_dict = {} #Dicionário que segura o valor de todas as imagens dentro de outros dicionários. 
 
-
-    scores_sublist = []
-    classes_sublist = []
-    boxes_sublist = []
-
-    scores_all = []
-    classes_all = []
-    bosex_all = []
-
     detection_graph = tf.Graph()
     #os.chdir(path_imgs)
     TEST_IMAGE_PATHS = glob.glob(path_imgs+"/*.jpg")
@@ -150,19 +128,8 @@ def run_inference_test(path_imgs):
         image_np_expanded = np.expand_dims(image_np, axis=0)
         # Actual detection.
         output_dict = run_inference_for_single_image(image_np, detection_graph)
-        #print(output_dict)
-        #break
-        # Visualization of the results of a detection.
         
-        """vis_util.visualize_boxes_and_labels_on_image_array(
-            image_np,
-            output_dict['detection_boxes'],
-            output_dict['detection_classes'],
-            output_dict['detection_scores'],
-            category_index,
-            instance_masks=output_dict.get('detection_masks'),
-            use_normalized_coordinates=True,
-            line_thickness=8)"""
+        #Itera por todas as imagnes de teste. 
         counter = 0
         for i in output_dict["detection_scores"]:
             if(i >= MINIMAL_CONFIDENCE):
@@ -178,12 +145,11 @@ def run_inference_test(path_imgs):
 
     return(image_data_dict)
 
-        #print((output_dict["detection_scores"].max()))
-#        plt.figure(figsize=IMAGE_SIZE)
-#        plt.imshow(image_np)
-        #plt.savefig("/home/gardin/Documents/Estagio_LET/imagens_testadas/faster_rcnn/imagem_{}.png".format(image_count))
-#        plt.show()
 
+def get_data_from_labels(label_path):
+    LabelPath = glob.glob(label_path+"/*.xml")
+    for label in LabelPath:
+        pass
 
 def main(argv):
     test_folder = ""
@@ -199,7 +165,9 @@ def main(argv):
         elif opt in ("-i", "--ifile"):
             test_folder = arg
 
+
     print(run_inference_test(test_folder))
+
 
 
 if __name__ == '__main__':
