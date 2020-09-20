@@ -4,6 +4,7 @@ import tensorflow as tf
 import sys, getopt, glob
 from PIL import Image
 from object_detection.utils import label_map_util
+import xml.etree.ElementTree as ET
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
@@ -148,8 +149,10 @@ def run_inference_test(path_imgs):
 
 def get_data_from_labels(label_path):
     LabelPath = glob.glob(label_path+"/*.xml")
-    for label in LabelPath:
-        pass
+    for path in LabelPath:
+        tree = ET.parse(path)
+        for elem in tree.findall("object/name"):
+            print(elem.text)
 
 def main(argv):
     test_folder = ""
@@ -167,6 +170,7 @@ def main(argv):
 
 
     print(run_inference_test(test_folder))
+    get_data_from_labels(test_folder)
 
 
 
