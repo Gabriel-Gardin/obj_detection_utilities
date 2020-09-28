@@ -29,12 +29,10 @@ import matplotlib.pyplot as plt
 
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
-PATH_TO_CKPT = "mymodels/ssd_models/SSD_Mobilenetv1_FPN/frozen_inference_graph.pb"
+PATH_TO_CKPT = "/home/gardin/Documents/Estagio_LET/let_obj_detection/mymodels/ssd_models/ssd_mobilenet_v2_coco/frozen_inference_graph.pb"
 
 # List of the strings that is used to add correct label for each box.
-PATH_TO_LABELS = "mymodels/ssd_models/SSD_Mobilenetv1_FPN/label_map.pbtxt"
-
-TEST_IMAGE_PATHS = ["all_dataset_final/2367.jpg"]
+PATH_TO_LABELS = "/home/gardin/Documents/Estagio_LET/let_obj_detection/mymodels/ssd_models/ssd_mobilenet_v2_coco/label_map.pbtxt"
 
 num_classes = 5
 
@@ -144,7 +142,7 @@ def run_inference_test(path_imgs):
         print((output_dict["detection_scores"].max()))
         plt.figure(figsize=IMAGE_SIZE)
         plt.imshow(image_np)
-        plt.savefig("/home/gardin/Documents/Estagio_LET/imagens_testadas/SSD_Mobilenetv1_FPN/imagem_{}".format(image_path.split("/")[-1]))
+        plt.savefig("/home/gardin/Documents/Estagio_LET/imagens_testadas/ssd_mobilenet_coco/imagem_{}".format(image_path.split("/")[-1]))
         #plt.show()
 
 

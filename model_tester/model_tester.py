@@ -10,7 +10,7 @@ matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
 
 
-MINIMAL_CONFIDENCE = 0.5
+MINIMAL_CONFIDENCE = 0.6
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
 PATH_TO_CKPT = "/home/gardin/Documents/Estagio_LET/let_obj_detection/mymodels/ssd_models/SSD_Mobilenetv1_FPN/frozen_inference_graph.pb"
@@ -145,11 +145,153 @@ def run_inference_test(path_imgs):
 
 
 def get_data_from_labels(label_path):
+    labels_data_dict = {}
+    boxes_xmin = []
+    boxes_ymin = []
+    boxes_ymax = []
+    boxes_xmax = []
+    
+
+
     LabelPath = glob.glob(label_path+"/*.xml")
     for path in LabelPath:
+        label_file_name = path.split("/")[-1][:-4]
+        labels_data_dict[label_file_name] = {}
+        labels_data_dict[label_file_name]["boxes"] = []
+        labels_data_dict[label_file_name]["classes"] = []
+        
+
+        #print(label_file_name)
         tree = ET.parse(path)
         for elem in tree.findall("object/name"):
-            print(elem.text)
+            labels_data_dict[label_file_name]["classes"].append(label_to_num(elem.text))
+
+        for elem in tree.findall("object/bndbox/xmin"):
+            boxes_xmin.append(elem.text)
+
+        for elem in tree.findall("object/bndbox/ymin"):
+            boxes_ymin.append(elem.text)
+
+        for elem in tree.findall("object/bndbox/ymax"):
+            boxes_ymax.append(elem.text)
+
+        for elem in tree.findall("object/bndbox/xmax"):
+            boxes_xmax.append(elem.text)
+
+        for i in range(len(boxes_xmax)):
+            labels_data_dict[label_file_name]["boxes"].append([boxes_xmin[i], boxes_ymin[i], boxes_xmax[i], boxes_ymax[i]])
+        boxes_xmin = []
+        boxes_ymin = []
+        boxes_ymax = []
+        boxes_xmax = []
+
+    return(labels_data_dict)
+
+def label_to_num(label):
+    if(label == "BUR"):
+        return 1
+    elif(label == "REM"):
+        return 2
+    elif(label == "TLT"):
+        return 3
+    elif(label == "TRF"):
+        return 4
+    
+
+def run_test(infereced_data, labeled_data):
+    correct_detections = 0
+    incorrect_detections = 0
+    ignored_detections = 0
+
+    ignored_detections2 = 0
+
+    bur_ignored = 0
+    rem_ignored = 0
+    tlt_ignored = 0
+    trf_ignored = 0
+
+    bur_certo = 0
+    rem_certo = 0
+    tlt_certo = 0
+    trf_certo = 0
+
+    total_bur = count_appearences(labeled_data, 1)
+    total_rem = count_appearences(labeled_data, 2)
+    total_tlt = count_appearences(labeled_data, 3)
+    total_trf = count_appearences(labeled_data, 4)
+
+    for image_name in labeled_data:
+        #print(infereced_data[image_name])
+        """
+        print("-*-*-*-*-*-*-*-*-*-*--*-*-")
+        print("infereced --- {}".format(infereced_data[image_name]["classes"]))
+        print("labeled --- {}".format(labeled_data[image_name]["classes"]))
+        print("-*-*-*-*-*-*-*-*-*-*--*-*-")
+        print("\n")
+"""
+        for label in infereced_data[image_name]["classes"]:
+            if(label in labeled_data[image_name]["classes"]):
+                correct_detections += 1
+                if(label == 1):
+                    bur_certo += 1
+                elif(label == 2):
+                    rem_certo += 1
+                elif(label == 3):
+                    tlt_certo += 1
+                elif(label == 4):
+                    trf_certo += 1
+            else:
+                incorrect_detections += 1
+
+        for labeled_label in labeled_data[image_name]["classes"]:
+            if(labeled_label not in infereced_data[image_name]["classes"]):
+                ignored_detections2 += 1
+                if(labeled_label == 1):
+                    bur_ignored += 1
+                elif(labeled_label == 2):
+                    rem_ignored += 1
+                elif(labeled_label == 3):
+                    tlt_ignored += 1
+                elif(labeled_label == 4):
+                    trf_ignored += 1
+
+        """detecçõẽs ignoradas podem ser calculadas a partir do numero de detecções anotadas menos o total de detecções inferidas. 
+        Se o numero for negativo o mesmo deve ser igual ao numero de detecções erradas"""
+        ignored_detections += len(labeled_data[image_name]["classes"]) - len(infereced_data[image_name]["classes"])
+        #if(image_labeled["classes"] in )
+
+
+    print("\n")
+    print("Correct detections = {}".format(correct_detections))
+    print("Incorrect detections = {}".format(incorrect_detections))
+    print("Ignored detections = {}".format(ignored_detections))
+
+    print("Bur ignorados = {}%".format((bur_ignored/total_bur)*100))
+    print("Rem ignorados = {}%".format((rem_ignored/total_rem)*100))
+    print("Tlt ignorados = {}%".format((tlt_ignored/total_tlt)*100))
+    print("Trf ignorados = {}%".format((trf_ignored/total_trf)*100))
+
+    print("Bur detectados = {}%".format((bur_certo/total_bur)*100))
+    print("Rem detectados = {}%".format((rem_certo/total_rem)*100))
+    print("Tlt detectados = {}%".format((tlt_certo/total_tlt)*100))
+    print("Trf detectados = {}%".format((trf_certo/total_trf)*100))
+    
+    """
+    print("Total trf = {}".format(total_trf))
+    print("Trf certo = {}".format(trf_certo))
+    print("TLT certo = {}".format(tlt_certo))
+    print("rem certo = {}".format(rem_certo))
+    print("bur certo = {}".format(bur_certo))
+       """ 
+def count_appearences(data, desired_class):
+    """ Recebe um dicionário labeled_data e a classe que se deseja contar o numero de aparições"""
+    total_count = 0
+    for image_name in data:
+        for classe in data[image_name]["classes"]:
+            if(classe == desired_class):
+                total_count += 1
+    return total_count
+
 
 def main(argv):
     test_folder = ""
@@ -165,10 +307,19 @@ def main(argv):
         elif opt in ("-i", "--ifile"):
             test_folder = arg
 
+    infereced_Data = run_inference_test(test_folder)
+    labeled_Data = get_data_from_labels(test_folder)
+    
+    run_test(infereced_Data, labeled_Data)
 
-    print(run_inference_test(test_folder))
-    get_data_from_labels(test_folder)
 
+"""
+    print(infereced_Data)
+    print("\n")
+    print("*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*")
+    print("\n")
+    print(labeled_Data)
+"""
 
 
 if __name__ == '__main__':
